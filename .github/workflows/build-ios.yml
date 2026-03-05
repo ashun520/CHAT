@@ -40,6 +40,8 @@ jobs:
         run: |
           cd frontend
           flutter create --platforms=ios .
+          rm -f ios/Podfile
+          rm -f ios/Podfile.lock
 
       - name: Build iOS
         run: |
