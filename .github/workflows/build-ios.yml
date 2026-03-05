@@ -31,6 +31,17 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
+      - name: Install Apple Certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+
+      - name: Install Provisioning Profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/$(echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode | plutil -extract UUID xml1 -o - - | grep -A1 UUID | tail -1 | sed 's/<[^>]*>//g').mobileprovision
+
       - name: Install Frontend Dependencies
         run: |
           cd frontend
@@ -46,26 +57,53 @@ jobs:
       - name: Build iOS
         run: |
           cd frontend
-          flutter build ios --release --simulator
+          flutter build ios --release --no-codesign
+          
+      - name: Codesign iOS App
+        run: |
+          cd frontend
+          # 获取证书信息
+          CERT_INFO=$(security find-identity -v -p codesigning | grep "iPhone Distribution" | head -1 | sed 's/.*"/"/' | sed 's/".*//')
+          
+          # 签名 App
+          /usr/bin/codesign --force --sign "$CERT_INFO" --preserve-metadata=identifier,entitlements,flags \
+            build/ios/iphoneos/Runner.app
+          
+          # 签名 Frameworks
+          find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec \
+            /usr/bin/codesign --force --sign "$CERT_INFO" {} \;
 
       - name: Create IPA
         run: |
           cd frontend
-          zip -r SuperChat-Simulator.zip build/ios/iphonesimulator
-          mv SuperChat-Simulator.zip build/ios/
+          # 创建 Payload 目录
+          mkdir -p Payload
+          
+          # 复制签名后的 App
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          
+          # 复制 Provisioning Profile
+          cp ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision Payload/Runner.app/embedded.mobileprovision
+          
+          # 打包 IPA
+          zip -r SuperChat.ipa Payload
+          mv SuperChat.ipa build/ios/
+          
+          # 清理
+          rm -rf Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SuperChat-iOS-Simulator
-          path: frontend/build/ios/SuperChat-Simulator.zip
+          name: SuperChat-iOS-IPA
+          path: frontend/build/ios/SuperChat.ipa
           retention-days: 30
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: frontend/build/ios/SuperChat-Simulator.zip
+          files: frontend/build/ios/SuperChat.ipa
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
