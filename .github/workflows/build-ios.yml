@@ -35,6 +35,11 @@ jobs:
         run: |
           cd frontend
           flutter pub get
+          
+      - name: Create iOS platform
+        run: |
+          cd frontend
+          flutter create --platforms=ios .
 
       - name: Build iOS
         run: |

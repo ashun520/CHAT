@@ -35,6 +35,11 @@ jobs:
         run: |
           cd frontend
           flutter pub get
+          
+      - name: Create Android platform
+        run: |
+          cd frontend
+          flutter create --platforms=android .
 
       - name: Build APK
         run: |
