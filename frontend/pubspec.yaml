@@ -22,7 +22,7 @@ dependencies:
   
   # 网络请求
   dio: ^5.1.2
-  socket_io_client: ^2.0.6
+  socket_io_client: ^2.0.0
   
   # 本地存储
   shared_preferences: ^2.1.1
