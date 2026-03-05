@@ -1,0 +1,93 @@
+name: superchat
+description: A powerful cross-platform messaging app like WeChat and QQ.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI 组件
+  cupertino_icons: ^1.0.5
+  flutter_screenutil: ^5.8.4
+  cached_network_image: ^3.2.3
+  photo_view: ^0.14.0
+  
+  # 状态管理
+  provider: ^6.0.5
+  get: ^4.6.5
+  
+  # 网络请求
+  dio: ^5.1.2
+  socket_io_client: ^2.0.6
+  
+  # 本地存储
+  shared_preferences: ^2.1.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # 图片选择
+  image_picker: ^0.8.8
+  image_cropper: ^4.0.1
+  
+  # 权限
+  permission_handler: ^10.3.0
+  
+  # 文件处理
+  file_picker: ^5.3.1
+  path_provider: ^2.0.15
+  
+  # 视频/音频
+  video_player: ^2.6.1
+  audioplayers: ^4.0.1
+  record: ^4.4.4
+  
+  # 相机
+  camera: ^0.10.5
+  
+  # 地图
+  flutter_map: ^4.0.0
+  latlong2: ^0.8.2
+  
+  # 表情
+  emoji_picker_flutter: ^1.5.4
+  
+  # 工具
+  intl: ^0.18.0
+  uuid: ^3.0.7
+  mime: ^1.0.4
+  connectivity_plus: ^4.0.1
+  package_info_plus: ^4.0.2
+  
+  # 推送（可选）
+  firebase_messaging: ^14.6.1
+  firebase_core: ^2.14.0
+  
+  # 二维码
+  qr_flutter: ^4.0.0
+  qr_code_scanner: ^1.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  hive_generator: ^2.0.0
+  build_runner: ^2.4.4
+  json_serializable: ^6.7.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/emoji/
+    - assets/sounds/
+  
+  fonts:
+    - family: IconFont
+      fonts:
+        - asset: assets/fonts/IconFont.ttf
