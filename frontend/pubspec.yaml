@@ -86,8 +86,3 @@ flutter:
     - assets/icons/
     - assets/emoji/
     - assets/sounds/
-  
-  fonts:
-    - family: IconFont
-      fonts:
-        - asset: assets/fonts/IconFont.ttf
