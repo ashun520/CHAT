@@ -36,6 +36,11 @@ jobs:
         run: |
           cd frontend
           flutter pub get
+          
+      - name: Create iOS project files
+        run: |
+          cd frontend
+          flutter create --org com.superchat --project-name superchat --platforms=ios .
 
       - name: Build iOS
         run: |
