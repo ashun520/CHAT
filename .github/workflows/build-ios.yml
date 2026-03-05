@@ -31,37 +31,6 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      - name: Install Apple Certificate
-        run: |
-          # 创建临时 keychain
-          security create-keychain -p "" signing_temp.keychain
-          security default-keychain -s signing_temp.keychain
-          security unlock-keychain -p "" signing_temp.keychain
-          security set-keychain-settings -lut 21600 signing_temp.keychain
-          
-          # 导入 P12 证书
-          echo "${{ secrets.IOS_P12_BASE64 }}" | base64 --decode > /tmp/certificate.p12
-          security import /tmp/certificate.p12 -k signing_temp.keychain -P "${{ secrets.IOS_P12_PASSWORD }}" -T /usr/bin/codesign
-          
-          # 设置 keychain 为默认
-          security list-keychains -s signing_temp.keychain
-
-      - name: Install Provisioning Profile
-        run: |
-          # 创建目录
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          
-          # 解码并保存 Provisioning Profile
-          echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode > /tmp/profile.mobileprovision
-          
-          # 提取 UUID
-          UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode) 2>/dev/null || echo "adhoc")
-          
-          # 保存文件
-          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.mobileprovision
-          
-          echo "Provisioning Profile installed with UUID: $UUID"
-
       - name: Install Frontend Dependencies
         run: |
           cd frontend
@@ -79,51 +48,36 @@ jobs:
           cd frontend
           flutter build ios --release --no-codesign
           
-      - name: Codesign iOS App
-        run: |
-          cd frontend
-          # 获取证书信息
-          CERT_INFO=$(security find-identity -v -p codesigning | grep "iPhone Distribution" | head -1 | sed 's/.*"/"/' | sed 's/".*//')
-          
-          # 签名 App
-          /usr/bin/codesign --force --sign "$CERT_INFO" --preserve-metadata=identifier,entitlements,flags \
-            build/ios/iphoneos/Runner.app
-          
-          # 签名 Frameworks
-          find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec \
-            /usr/bin/codesign --force --sign "$CERT_INFO" {} \;
-
       - name: Create IPA
         run: |
           cd frontend
           # 创建 Payload 目录
           mkdir -p Payload
           
-          # 复制签名后的 App
+          # 复制 App（无签名版本）
           cp -R build/ios/iphoneos/Runner.app Payload/
           
-          # 复制 Provisioning Profile
-          cp ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision Payload/Runner.app/embedded.mobileprovision
-          
           # 打包 IPA
-          zip -r SuperChat.ipa Payload
-          mv SuperChat.ipa build/ios/
+          zip -r SuperChat-Unsigned.ipa Payload
+          mv SuperChat-Unsigned.ipa build/ios/
           
           # 清理
           rm -rf Payload
+          
+          echo "Created unsigned IPA (requires manual signing)"
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SuperChat-iOS-IPA
-          path: frontend/build/ios/SuperChat.ipa
+          path: frontend/build/ios/SuperChat-Unsigned.ipa
           retention-days: 30
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: frontend/build/ios/SuperChat.ipa
+          files: frontend/build/ios/SuperChat-Unsigned.ipa
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
