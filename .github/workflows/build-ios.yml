@@ -1,4 +1,4 @@
-name: Build iOS IPA
+https://github.com/ashun520/CHAT/settings/secrets/actionsname: Build iOS IPA
 
 on:
   push:
@@ -32,15 +32,35 @@ jobs:
           channel: 'stable'
 
       - name: Install Apple Certificate
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
-          p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+        run: |
+          # 创建临时 keychain
+          security create-keychain -p "" signing_temp.keychain
+          security default-keychain -s signing_temp.keychain
+          security unlock-keychain -p "" signing_temp.keychain
+          security set-keychain-settings -lut 21600 signing_temp.keychain
+          
+          # 导入 P12 证书
+          echo "${{ secrets.IOS_P12_BASE64 }}" | base64 --decode > /tmp/certificate.p12
+          security import /tmp/certificate.p12 -k signing_temp.keychain -P "${{ secrets.IOS_P12_PASSWORD }}" -T /usr/bin/codesign
+          
+          # 设置 keychain 为默认
+          security list-keychains -s signing_temp.keychain
 
       - name: Install Provisioning Profile
         run: |
+          # 创建目录
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/$(echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode | plutil -extract UUID xml1 -o - - | grep -A1 UUID | tail -1 | sed 's/<[^>]*>//g').mobileprovision
+          
+          # 解码并保存 Provisioning Profile
+          echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode > /tmp/profile.mobileprovision
+          
+          # 提取 UUID
+          UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(echo "${{ secrets.IOS_MOBILE_PROVISION_BASE64 }}" | base64 --decode) 2>/dev/null || echo "adhoc")
+          
+          # 保存文件
+          cp /tmp/profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.mobileprovision
+          
+          echo "Provisioning Profile installed with UUID: $UUID"
 
       - name: Install Frontend Dependencies
         run: |
