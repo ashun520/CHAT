@@ -41,6 +41,11 @@ jobs:
         run: |
           cd frontend
           flutter create --org com.superchat --project-name superchat --platforms=ios .
+          
+      - name: Install CocoaPods dependencies
+        run: |
+          cd frontend/ios
+          pod install || true
 
       - name: Build iOS
         run: |
