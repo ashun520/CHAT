@@ -1,4 +1,4 @@
-https://github.com/ashun520/CHAT/settings/secrets/actionsname: Build iOS IPA
+name: Build iOS IPA
 
 on:
   push:
