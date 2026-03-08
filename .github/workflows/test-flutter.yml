@@ -1,0 +1,33 @@
+name: Test Flutter Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+      - name: Create test Flutter app
+        run: |
+          mkdir -p test_app
+          cd test_app
+          flutter create .
+          flutter build ios --debug --simulator
+      - name: Package IPA
+        run: |
+          cd test_app
+          mkdir -p Payload
+          cp -R build/ios/iphonesimulator/Runner.app Payload/
+          zip -r TestApp.ipa Payload
+          mkdir -p build/ios
+          mv TestApp.ipa build/ios/
+          rm -rf Payload
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestApp-iOS
+          path: test_app/build/ios/TestApp.ipa
