@@ -11,12 +11,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
+      - run: flutter --version
       - run: flutter pub get
         working-directory: ./frontend
       - run: |
           flutter create --platforms=ios .
           # 删除现有的 Podfile 和 Podfile.lock
           rm -f Podfile Podfile.lock
+          # 查看当前目录结构
+          ls -la
           # 创建新的 Podfile 并设置部署目标和 post_install 脚本
           cat > Podfile << 'EOF'
 platform :ios, '12.0'
@@ -35,25 +38,43 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
       # 禁用 BITCODE 以减少构建错误
       config.build_settings['ENABLE_BITCODE'] = 'NO'
+      # 禁用代码签名
+      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
     end
   end
 end
 EOF
+          # 查看 Podfile 内容
+          cat Podfile
         working-directory: ./frontend
       - run: |
           # 手动运行 pod install 以确保依赖项正确安装
           cd ios
-          pod install
-        working-directory: ./frontend
-      - run: flutter build ios --debug --simulator --no-codesign
+          pod --version
+          pod install --verbose
         working-directory: ./frontend
       - run: |
+          # 查看 iOS 目录结构
+          ls -la ios
+        working-directory: ./frontend
+      - run: |
+          # 构建 iOS 应用
+          flutter build ios --debug --simulator --no-codesign --verbose
+        working-directory: ./frontend
+      - run: |
+          # 查看构建输出目录
+          ls -la build/ios
+          ls -la build/ios/iphonesimulator
+          # 创建 Payload 目录并打包 IPA
           mkdir -p Payload
           cp -R build/ios/iphonesimulator/Runner.app Payload/
           zip -r SuperChat.ipa Payload
           mkdir -p build/ios
           mv SuperChat.ipa build/ios/
           rm -rf Payload
+          # 查看最终输出
+          ls -la build/ios
         working-directory: ./frontend
       - uses: actions/upload-artifact@v4
         with:
