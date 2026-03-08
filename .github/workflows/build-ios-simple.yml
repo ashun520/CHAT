@@ -13,7 +13,27 @@ jobs:
           flutter-version: '3.19.0'
       - run: flutter pub get
         working-directory: ./frontend
-      - run: flutter create --platforms=ios .
+      - run: |
+          flutter create --platforms=ios .
+          # 创建 Podfile 并设置部署目标和 post_install 脚本
+          cat > Podfile << 'EOF'
+platform :ios, '12.0'
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+    end
+  end
+end
+EOF
         working-directory: ./frontend
       - run: flutter build ios --debug --simulator
         working-directory: ./frontend
