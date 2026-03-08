@@ -1,0 +1,36 @@
+name: Build iOS Basic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: ./frontend
+      - name: Create iOS project
+        run: flutter create --platforms=ios .
+        working-directory: ./frontend
+      - name: Build iOS
+        run: flutter build ios --debug --simulator
+        working-directory: ./frontend
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphonesimulator/Runner.app Payload/
+          zip -r SuperChat.ipa Payload
+          mkdir -p build/ios
+          mv SuperChat.ipa build/ios/
+          rm -rf Payload
+        working-directory: ./frontend
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SuperChat-iOS
+          path: ./frontend/build/ios/SuperChat.ipa
