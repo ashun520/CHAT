@@ -15,7 +15,9 @@ jobs:
         working-directory: ./frontend
       - run: |
           flutter create --platforms=ios .
-          # 创建 Podfile 并设置部署目标和 post_install 脚本
+          # 删除现有的 Podfile 和 Podfile.lock
+          rm -f Podfile Podfile.lock
+          # 创建新的 Podfile 并设置部署目标和 post_install 脚本
           cat > Podfile << 'EOF'
 platform :ios, '12.0'
 
@@ -29,13 +31,21 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
+      # 设置所有目标的部署目标为 12.0
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+      # 禁用 BITCODE 以减少构建错误
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
     end
   end
 end
 EOF
         working-directory: ./frontend
-      - run: flutter build ios --debug --simulator
+      - run: |
+          # 手动运行 pod install 以确保依赖项正确安装
+          cd ios
+          pod install
+        working-directory: ./frontend
+      - run: flutter build ios --debug --simulator --no-codesign
         working-directory: ./frontend
       - run: |
           mkdir -p Payload
