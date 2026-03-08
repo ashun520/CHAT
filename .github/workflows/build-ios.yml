@@ -47,7 +47,16 @@ jobs:
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 11.0;/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/g' ios/Runner.xcodeproj/project.pbxproj
           
           # 创建 Podfile 并设置部署目标
-          echo "platform :ios, '12.0'\n\ntarget 'Runner' do\n  use_frameworks!\n  use_modular_headers!\n\n  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))\nend" > ios/Podfile
+          cat > ios/Podfile << 'EOF'
+platform :ios, '12.0'
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+EOF
 
       - name: Build iOS
         run: |
