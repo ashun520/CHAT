@@ -46,8 +46,8 @@ jobs:
       - name: Build iOS
         run: |
           cd frontend
-          # 构建设备版本但跳过签名
-          flutter build ios --release --no-codesign --build-number=1 --build-name=1.0.0
+          # 构建模拟器版本，使用调试模式避免签名问题
+          flutter build ios --debug --simulator
           
       - name: Create IPA
         run: |
@@ -55,30 +55,30 @@ jobs:
           # 创建 Payload 目录
           mkdir -p Payload
           
-          # 复制 App（无签名版本）
-          cp -R build/ios/iphoneos/Runner.app Payload/
+          # 复制 App（模拟器版本）
+          cp -R build/ios/iphonesimulator/Runner.app Payload/
           
           # 打包 IPA
-          zip -r SuperChat-Unsigned.ipa Payload
-          mv SuperChat-Unsigned.ipa build/ios/
+          zip -r SuperChat-Debug-Simulator.ipa Payload
+          mv SuperChat-Debug-Simulator.ipa build/ios/
           
           # 清理
           rm -rf Payload
           
-          echo "Created unsigned IPA (requires manual signing)"
+          echo "Created debug simulator IPA (for testing in simulator)"
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SuperChat-iOS-IPA
-          path: frontend/build/ios/SuperChat-Unsigned.ipa
+          path: frontend/build/ios/SuperChat-Debug-Simulator.ipa
           retention-days: 30
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: frontend/build/ios/SuperChat-Unsigned.ipa
+          files: frontend/build/ios/SuperChat-Debug-Simulator.ipa
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
